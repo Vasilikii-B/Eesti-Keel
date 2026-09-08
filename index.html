@@ -345,11 +345,12 @@
 
     .study-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      grid-template-columns: 0.65fr 1.35fr;
+      gap: 16px;
       padding: 10px 18px;
       border-bottom: 1px solid #edf1f6;
       font-size: 16px;
+      align-items: start;
     }
 
     .study-row:last-child {
@@ -358,10 +359,13 @@
 
     .study-estonian {
       font-weight: bold;
+      line-height: 1.05;
     }
 
     .study-english {
       color: #425466;
+      line-height: 1.25;
+      white-space: normal;
     }
 
     /* -----------------------------
@@ -864,9 +868,78 @@ let chapters = {};
 let chapterOrder = [];
 let chapterDisplayNames = {};
 
+/* ------------------------------------------------
+   VOCABULARY SOURCE
+
+   For GitHub:
+   - leave "github" active
+
+   For desktop testing:
+   - change "github" to "desktop"
+
+   Desktop mode uses the built-in test vocabulary below,
+   so no Excel file is needed locally.
+--------------------------------------------------- */
+
+const VOCABULARY_SOURCE = "github";
+// const VOCABULARY_SOURCE = "desktop";
+
 const DEFAULT_EXCEL_FILE = "estonian_vocabulary.xlsx";
 const VOCABULARY_SHEET = "Vocabulary";
 const ORDER_SHEET = "Chapter Order";
+
+
+/* ------------------------------------------------
+   DESKTOP TEST VOCABULARY
+   Used only when VOCABULARY_SOURCE = "desktop"
+--------------------------------------------------- */
+
+const desktopTestChapters = {
+  colors: [
+    { estonian: "punane", english: "red" },
+    { estonian: "sinine", english: "blue" },
+    { estonian: "roheline", english: "green" },
+    { estonian: "kollane", english: "yellow" },
+    { estonian: "must", english: "black" },
+    { estonian: "valge", english: "white" },
+    { estonian: "pruun", english: "brown" },
+    { estonian: "hall", english: "grey" },
+    { estonian: "roosa", english: "pink" },
+    { estonian: "oranž", english: "orange" }
+  ],
+
+  clothes: [
+    { estonian: "särk", english: "shirt" },
+    { estonian: "püksid", english: "trousers" },
+    { estonian: "kleit", english: "dress" },
+    { estonian: "seelik", english: "skirt" },
+    { estonian: "jope", english: "jacket" },
+    { estonian: "mantel", english: "coat" },
+    { estonian: "müts", english: "hat" },
+    { estonian: "kingad", english: "shoes" },
+    { estonian: "sokid", english: "socks" },
+    { estonian: "kampsun", english: "sweater" }
+  ],
+
+  body: [
+    { estonian: "pea", english: "head" },
+    { estonian: "käsi", english: "hand" },
+    { estonian: "jalg", english: "leg" },
+    { estonian: "silm", english: "eye" },
+    { estonian: "kõrv", english: "ear" },
+    { estonian: "nina", english: "nose" },
+    { estonian: "suu", english: "mouth" },
+    { estonian: "hammas", english: "tooth" },
+    { estonian: "sõrm", english: "finger" },
+    { estonian: "selg", english: "back" }
+  ]
+};
+
+const desktopTestOrder = [
+  { key: "colors", name: "Colors" },
+  { key: "clothes", name: "Clothes" },
+  { key: "body", name: "Body Parts" }
+];
 
 function normalizeHeader(value) {
   return String(value || "")
@@ -1109,7 +1182,10 @@ function renderChapterCards() {
 }
 
 async function loadVocabularyFromUrl(fileName) {
-  const response = await fetch(fileName);
+  const response = await fetch(
+    fileName + "?v=" + Date.now(),
+    { cache: "no-store" }
+  );
 
   if (!response.ok) {
     throw new Error("Could not load Excel file.");
@@ -1125,7 +1201,73 @@ async function loadVocabularyFromUrl(fileName) {
 }
 
 
+
+function loadVocabularyFromDesktopFile(event) {
+  const file = event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(loadEvent) {
+    try {
+      const data = new Uint8Array(
+        loadEvent.target.result
+      );
+
+      const workbook = XLSX.read(
+        data,
+        { type: "array" }
+      );
+
+      parseWorkbook(workbook);
+
+      document
+        .getElementById("desktopTestFileName")
+        .textContent = file.name;
+
+      document
+        .getElementById("selectionError")
+        .textContent = "";
+
+    } catch (error) {
+      document
+        .getElementById("selectionError")
+        .textContent =
+          "The desktop vocabulary file could not be read.";
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+
 async function initializeVocabulary() {
+
+  if (VOCABULARY_SOURCE === "desktop") {
+
+    chapters = {};
+    chapterOrder = [];
+    chapterDisplayNames = {};
+
+    desktopTestOrder.forEach((chapterInfo, index) => {
+      const chapterKey = "desktop_" + index;
+
+      chapters[chapterKey] =
+        desktopTestChapters[chapterInfo.key];
+
+      chapterOrder.push(chapterKey);
+
+      chapterDisplayNames[chapterKey] =
+        chapterInfo.name;
+    });
+
+    renderChapterCards();
+    return;
+  }
+
   if (typeof XLSX === "undefined") {
     document
       .getElementById("selectionError")
@@ -1342,7 +1484,7 @@ function showStudyVocabulary(chapterKey) {
 
     list.appendChild(row);
   });
-
+  list.scrollTop = 0;
   overlay.style.display = "block";
 }
 
