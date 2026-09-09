@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estonian Vocabulary Game</title>
+  <title>Eesti Keele Õppimine</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -676,7 +676,7 @@
   <div class="hero">
     <div class="hero-content">
       <div class="hero-badge">
-        <h1>Estonian Vocabulary Game</h1>
+        <h1>Eesti Keele Õppimine</h1>
         <!-- <p>
           Clear the word pool by translating every Estonian word correctly.
         </p> -->
@@ -717,7 +717,7 @@
 
     <div class="button-row" id="translationStartRow" style="display:none;">
       <button class="primary-btn" onclick="startTranslationGame()">
-        Start Game
+        Start
       </button>
     </div>
 
@@ -1363,8 +1363,8 @@ function selectTranslationMode(mode) {
     .getElementById("selectionInstruction")
     .textContent =
       mode === "et-en"
-        ? "Select one or more categories, then press Start Game. You will translate Estonian into English."
-        : "Select one or more categories, then press Start Game. You will translate English into Estonian.";
+        ? "Select one or more categories, then press Start. You will translate Estonian into English."
+        : "Select one or more categories, then press Start. You will translate English into Estonian.";
 
   document
     .getElementById("translationStartRow")
