@@ -159,6 +159,10 @@
       white-space: nowrap;
     }
 
+    .chapter-card-content.long-title {
+      font-size: 11px;
+    }
+
     .chapter-card:hover .chapter-card-content {
       border-color: #9bbfea;
       background: #f0f6ff;
@@ -1171,7 +1175,11 @@ function renderChapterCards() {
         type="checkbox"
         value="${chapterKey}"
       >
-      <div class="chapter-card-content">
+      <div class="chapter-card-content ${
+        chapterDisplayNames[chapterKey].length > 18
+          ? "long-title"
+          : ""
+      }">
         <span class="chapter-number">${index + 1}.</span>
         ${chapterDisplayNames[chapterKey]}
       </div>
@@ -1484,8 +1492,11 @@ function showStudyVocabulary(chapterKey) {
 
     list.appendChild(row);
   });
-  list.scrollTop = 0;
   overlay.style.display = "block";
+
+  requestAnimationFrame(() => {
+    list.scrollTop = 0;
+  });
 }
 
 function closeStudyOverlay() {
