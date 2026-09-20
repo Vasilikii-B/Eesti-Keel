@@ -1086,8 +1086,8 @@ let chapterDisplayNames = {};
    so no Excel file is needed locally.
 --------------------------------------------------- */
 
-const VOCABULARY_SOURCE = "github";
-// const VOCABULARY_SOURCE = "desktop";
+// const VOCABULARY_SOURCE = "github";
+const VOCABULARY_SOURCE = "desktop";
 
 const DEFAULT_EXCEL_FILE = "estonian_vocabulary.xlsx";
 const VOCABULARY_SHEET = "Vocabulary";
@@ -1137,13 +1137,25 @@ const desktopTestChapters = {
     { estonian: "hammas", english: "tooth" },
     { estonian: "sõrm", english: "finger" },
     { estonian: "selg", english: "back" }
+  ],
+
+  test: [
+    { estonian: "word1", english: "translation11 / translation12" },
+    { estonian: "word2", english: "translation21 / translation22" },
+    { estonian: "word3", english: "translation31 / translation32" },
+    { estonian: "word4", english: "translation41 / translation42" },
+    { estonian: "word5", english: "translation51 / translation52" }
+    
   ]
+
+
 };
 
 const desktopTestOrder = [
   { key: "colors", name: "Colors" },
   { key: "clothes", name: "Clothes" },
-  { key: "body", name: "Body Parts" }
+  { key: "body", name: "Body Parts" },
+  { key: "test", name: "test" }
 ];
 
 function normalizeHeader(value) {
@@ -1823,6 +1835,14 @@ function showNextWords() {
   }
 }
 
+
+function getAcceptedAnswers(answerText) {
+  return String(answerText || "")
+    .split("/")
+    .map(answer => answer.trim().toLowerCase())
+    .filter(answer => answer !== "");
+}
+
 function checkAnswers() {
 
   let correctWordsThisRound = [];
@@ -1840,23 +1860,20 @@ function checkAnswers() {
         .trim()
         .toLowerCase();
 
-    const correctAnswer =
-      (
-        selectedMode === "et-en"
-          ? word.english
-          : word.estonian
-      )
-        .trim()
-        .toLowerCase();
-
-    const shownCorrectAnswer =
+    const answerText =
       selectedMode === "et-en"
         ? word.english
         : word.estonian;
 
+    const acceptedAnswers =
+      getAcceptedAnswers(answerText);
+
+    const shownCorrectAnswer =
+      answerText;
+
     input.disabled = true;
 
-    if (userAnswer === correctAnswer) {
+    if (acceptedAnswers.includes(userAnswer)) {
 
       feedback.className =
         "feedback correct";
