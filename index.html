@@ -21,6 +21,11 @@
 
       --red: #d94b4b;
       --red-soft: #fdecec;
+
+      --orange: #e88922;
+      --orange-soft: #fff1df;
+      --gray: #7b8794;
+      --gray-soft: #eef1f4;
     }
 
     * {
@@ -152,31 +157,141 @@
       border: 2px solid #dce5ef;
       background: #f8fbff;
       border-radius: 11px;
-      padding: 10px 12px;
+      padding: 5px 9px;
       font-size: 14px;
       font-weight: bold;
+      line-height: 1.05;
       transition: 0.15s ease;
+      white-space: normal;
+      min-height: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .chapter-title {
+      min-width: 0;
+      flex: 1 1 auto;
+      display: block;
+      white-space: normal;
+      overflow-wrap: normal;
+      word-break: normal;
+      hyphens: none;
+    }
+
+    .chapters-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .chapters-heading-row h2 {
+      margin: 0;
+    }
+
+    .category-legend {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      font-weight: bold;
+      color: #667085;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       white-space: nowrap;
     }
 
-    .chapter-card-content.long-title {
-      font-size: 11px;
+    .legend-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: none;
+      flex: 0 0 11px;
     }
+
+    .legend-noun { background: #175dab; }
+    .legend-adjective { background: #187744; }
+    .legend-verb { background: #a73535; }
+    .legend-adverb { background: #a65b0d; }
+    .legend-other { background: #4d5966; }
 
     .chapter-card:hover .chapter-card-content {
-      border-color: #9bbfea;
-      background: #f0f6ff;
-    }
-
-    .chapter-card input:checked + .chapter-card-content {
-      border-color: var(--blue);
-      background: #e8f2ff;
-      color: #175dab;
+      filter: brightness(0.98);
     }
 
     .chapter-number {
-      color: #7a8797;
-      margin-right: 4px;
+      color: #6f7c8d;
+      margin-right: 5px;
+      flex: 0 0 auto;
+    }
+
+    .chapter-card-content.category-noun {
+      border-color: #9fc5ef;
+      background: #eaf4ff;
+      color: #161616;
+    }
+
+    .chapter-card-content.category-adjective {
+      border-color: #9ed8b6;
+      background: #eaf8ef;
+      color: #161616;
+    }
+
+    .chapter-card-content.category-verb {
+      border-color: #efb2b2;
+      background: #fdeeee;
+      color: #161616;
+    }
+
+    .chapter-card-content.category-adverb {
+      border-color: #efc48d;
+      background: var(--orange-soft);
+      color: #161616;
+    }
+
+    .chapter-card-content.category-other {
+      border-color: #cbd2d9;
+      background: var(--gray-soft);
+      color: #161616;
+    }
+
+    .chapter-card input:checked + .chapter-card-content.category-noun {
+      border-color: var(--blue);
+      background: #d9ebff;
+      box-shadow: 0 0 0 2px rgba(58, 141, 222, 0.12);
+    }
+
+    .chapter-card input:checked + .chapter-card-content.category-adjective {
+      border-color: var(--green);
+      background: #d9f2e3;
+      box-shadow: 0 0 0 2px rgba(32, 167, 90, 0.12);
+    }
+
+    .chapter-card input:checked + .chapter-card-content.category-verb {
+      border-color: var(--red);
+      background: #f9dddd;
+      box-shadow: 0 0 0 2px rgba(217, 75, 75, 0.12);
+    }
+
+    .chapter-card input:checked + .chapter-card-content.category-adverb {
+      border-color: var(--orange);
+      background: #ffe6c4;
+      box-shadow: 0 0 0 2px rgba(232, 137, 34, 0.12);
+    }
+
+    .chapter-card input:checked + .chapter-card-content.category-other {
+      border-color: var(--gray);
+      background: #e3e7eb;
+      box-shadow: 0 0 0 2px rgba(123, 135, 148, 0.12);
     }
 
     /* -----------------------------
@@ -338,6 +453,15 @@
     .study-modal-header h2 {
       margin: 0;
       text-align: center;
+    }
+
+    .study-word-count {
+      min-width: 72px;
+      text-align: right;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: bold;
+      white-space: nowrap;
     }
 
     .study-list {
@@ -703,6 +827,20 @@
         margin-bottom: 4px;
       }
 
+      .chapters-heading-row {
+        gap: 6px;
+      }
+
+      .category-legend {
+        gap: 6px 8px;
+        font-size: 9px;
+      }
+
+      .legend-swatch {
+        width: 14px;
+        height: 8px;
+      }
+
       .chapter-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
@@ -710,17 +848,11 @@
       }
 
       .chapter-card-content {
-        padding: 7px 7px;
+        padding: 6px 7px;
         font-size: 11px;
         line-height: 1.05;
-        white-space: normal;
-        min-height: 36px;
-        display: flex;
-        align-items: center;
-      }
-
-      .chapter-card-content.long-title {
-        font-size: 9.5px;
+        min-height: 44px;
+        height: 44px;
       }
 
       .chapter-number {
@@ -912,7 +1044,16 @@
       </button>
     </div>
 
-    <h2>Vocabulary Chapters</h2>
+    <div class="chapters-heading-row">
+      <h2>Vocabulary Chapters</h2>
+      <div class="category-legend" aria-label="Chapter category colors">
+        <span class="legend-item"><span class="legend-swatch legend-noun"></span>Noun</span>
+        <span class="legend-item"><span class="legend-swatch legend-adjective"></span>Adjective</span>
+        <span class="legend-item"><span class="legend-swatch legend-verb"></span>Verb</span>
+        <span class="legend-item"><span class="legend-swatch legend-adverb"></span>Adverb</span>
+        <span class="legend-item"><span class="legend-swatch legend-other"></span>Other</span>
+      </div>
+    </div>
 
     <p class="selection-instruction" id="selectionInstruction">
       Click a category to study its vocabulary.
@@ -935,7 +1076,7 @@
       <div class="study-modal-header">
         <button class="back-btn" onclick="closeStudyOverlay()">← Back</button>
         <h2 id="studyModalTitle"></h2>
-        <div class="section-top-spacer"></div>
+        <div class="study-word-count" id="studyWordCount"></div>
       </div>
 
       <div class="study-list" id="studyList"></div>
@@ -1072,6 +1213,7 @@
 let chapters = {};
 let chapterOrder = [];
 let chapterDisplayNames = {};
+let chapterCategories = {};
 
 /* ------------------------------------------------
    VOCABULARY SOURCE
@@ -1237,6 +1379,11 @@ function parseWorkbook(workbook) {
     ["english", "inglise", "en"]
   );
 
+  const orderCategoryIndex = findColumn(
+    orderHeaders,
+    ["category"]
+  );
+
   const orderChapterIndex = findColumn(
     orderHeaders,
     ["chapter"]
@@ -1258,11 +1405,12 @@ function parseWorkbook(workbook) {
   }
 
   if (
+    orderCategoryIndex === -1 ||
     orderChapterIndex === -1 ||
     orderNumberIndex === -1
   ) {
     throw new Error(
-      'The "Chapter Order" sheet must have columns: Chapter, Order.'
+      'The "Chapter Order" sheet must have columns: Category, Chapter, Order.'
     );
   }
 
@@ -1275,6 +1423,10 @@ function parseWorkbook(workbook) {
     const chapterName = normalizeChapterName(
       row[orderChapterIndex]
     );
+
+    const categoryName = String(
+      row[orderCategoryIndex] || "Other"
+    ).trim();
 
     const orderValue = row[orderNumberIndex];
 
@@ -1290,6 +1442,7 @@ function parseWorkbook(workbook) {
 
     validChapterRows.push({
       chapterName: chapterName,
+      category: categoryName || "Other",
       order: Number(orderValue),
       sourceRow: rowIndex
     });
@@ -1339,6 +1492,7 @@ function parseWorkbook(workbook) {
   const newChapters = {};
   const newOrder = [];
   const newDisplayNames = {};
+  const newCategories = {};
 
   validChapterRows.forEach((chapterInfo, index) => {
     const words = vocabularyByChapter[
@@ -1356,6 +1510,7 @@ function parseWorkbook(workbook) {
     newChapters[key] = words;
     newOrder.push(key);
     newDisplayNames[key] = chapterInfo.chapterName;
+    newCategories[key] = chapterInfo.category;
   });
 
   if (newOrder.length === 0) {
@@ -1367,8 +1522,53 @@ function parseWorkbook(workbook) {
   chapters = newChapters;
   chapterOrder = newOrder;
   chapterDisplayNames = newDisplayNames;
+  chapterCategories = newCategories;
 
   renderChapterCards();
+}
+
+function getCategoryClass(categoryName) {
+  const normalized = String(categoryName || "Other")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "noun") return "category-noun";
+  if (normalized === "adjective") return "category-adjective";
+  if (normalized === "verb") return "category-verb";
+  if (normalized === "adverb") return "category-adverb";
+  return "category-other";
+}
+
+function fitChapterTitles() {
+  document.querySelectorAll(".chapter-card-content").forEach(card => {
+    const title = card.querySelector(".chapter-title");
+    const number = card.querySelector(".chapter-number");
+    if (!title || !number) return;
+
+    const startingSize = window.innerWidth <= 700 ? 11 : 14;
+    const minimumSize = window.innerWidth <= 700 ? 7.5 : 8;
+    let size = startingSize;
+
+    title.style.fontSize = size + "px";
+    number.style.fontSize = size + "px";
+
+    while (size > minimumSize) {
+      const cardStyle = getComputedStyle(card);
+      const availableHeight =
+        card.clientHeight -
+        parseFloat(cardStyle.paddingTop) -
+        parseFloat(cardStyle.paddingBottom);
+
+      const fitsHeight = title.scrollHeight <= availableHeight + 1;
+      const fitsWidth = card.scrollWidth <= card.clientWidth + 1;
+
+      if (fitsHeight && fitsWidth) break;
+
+      size -= 0.5;
+      title.style.fontSize = size + "px";
+      number.style.fontSize = size + "px";
+    }
+  });
 }
 
 function renderChapterCards() {
@@ -1389,17 +1589,17 @@ function renderChapterCards() {
         value="${chapterKey}"
       >
       <div class="chapter-card-content ${
-        chapterDisplayNames[chapterKey].length > 18
-          ? "long-title"
-          : ""
+        getCategoryClass(chapterCategories[chapterKey])
       }">
         <span class="chapter-number">${index + 1}.</span>
-        ${chapterDisplayNames[chapterKey]}
+        <span class="chapter-title">${chapterDisplayNames[chapterKey]}</span>
       </div>
     `;
 
     grid.appendChild(label);
   });
+
+  requestAnimationFrame(fitChapterTitles);
 }
 
 async function loadVocabularyFromUrl(fileName) {
@@ -1472,6 +1672,7 @@ async function initializeVocabulary() {
     chapters = {};
     chapterOrder = [];
     chapterDisplayNames = {};
+    chapterCategories = {};
 
     desktopTestOrder.forEach((chapterInfo, index) => {
       const chapterKey = "desktop_" + index;
@@ -1483,6 +1684,9 @@ async function initializeVocabulary() {
 
       chapterDisplayNames[chapterKey] =
         chapterInfo.name;
+
+      chapterCategories[chapterKey] =
+        chapterInfo.category || "Other";
     });
 
     renderChapterCards();
@@ -1689,6 +1893,9 @@ function showStudyVocabulary(chapterKey) {
   title.textContent =
     chapterDisplayNames[chapterKey] ||
     chapterKey;
+
+  document.getElementById("studyWordCount").textContent =
+    `${chapters[chapterKey].length} ${chapters[chapterKey].length === 1 ? "word" : "words"}`;
 
   list.innerHTML = "";
 
@@ -2194,6 +2401,12 @@ document.addEventListener("keydown", function(event) {
   }
 
 });
+
+window.addEventListener("resize", () => {
+  requestAnimationFrame(fitChapterTitles);
+});
+
+window.addEventListener("resize", fitChapterTitles);
 
 initializeVocabulary();
 
