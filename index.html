@@ -496,6 +496,117 @@
       white-space: normal;
     }
 
+    /* Special four-column study view for pronouns / proadverbs */
+    .study-modal.special-study-modal {
+      width: min(1320px, 100%);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .study-list.special-study-list {
+      background: #ffffff;
+    }
+
+    .special-study-header,
+    .special-study-row {
+      display: grid;
+      grid-template-columns: minmax(305px, 1.75fr) minmax(170px, 1fr) minmax(235px, 1.45fr) minmax(235px, 1.45fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .special-study-header {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding: 9px 14px;
+      background: #eef3f8;
+      border-bottom: 1px solid #dfe7f0;
+      font-size: 12px;
+      font-weight: bold;
+      color: #526174;
+    }
+
+    .special-study-row {
+      padding: 6px 12px;
+      border-bottom: 1px solid #edf1f6;
+      font-size: 13px;
+      line-height: 1.12;
+    }
+
+    .special-study-row.group-separator {
+      border-top: 2px solid #cfd8e3;
+      margin-top: 3px;
+      padding-top: 11px;
+    }
+
+    .special-study-row:last-child {
+      border-bottom: none;
+    }
+
+    .special-study-word {
+      font-weight: bold;
+      white-space: pre-line;
+      font-size: 13px;
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+      text-align: left;
+      align-self: center;
+    }
+
+    .special-study-translation {
+      color: #425466;
+      white-space: pre-line;
+      line-height: 1.08;
+      text-align: left;
+      align-self: center;
+    }
+
+    .special-study-translation .translation-note {
+      display: block;
+      margin-top: 1px;
+      font-size: 9px;
+      line-height: 1.05;
+      color: #657386;
+      font-weight: normal;
+    }
+
+    .special-study-example,
+    .special-study-example-translation {
+      white-space: pre-line;
+      font-size: 11.5px;
+      line-height: 1.05;
+    }
+
+    #quizSection.special-quiz-mode .word-row {
+      grid-template-columns: minmax(360px, 1.35fr) minmax(250px, 0.9fr) 1fr;
+    }
+
+    #quizSection.special-quiz-mode .word {
+      font-size: 15px;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    #quizSection.special-quiz-mode .answer-input {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .special-study-section {
+      padding: 10px 14px 7px 14px;
+      background: #f7f9fc;
+      border-top: 1px solid #dfe7f0;
+      border-bottom: 1px solid #dfe7f0;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.02em;
+    }
+
+    .special-study-section:first-child {
+      border-top: none;
+    }
+
     /* -----------------------------
        QUIZ
     ----------------------------- */
@@ -1002,6 +1113,44 @@
         padding: 6px 10px;
         font-size: 13px;
       }
+
+      .study-modal.special-study-modal {
+        width: 100%;
+      }
+
+      .special-study-header,
+      .special-study-row {
+        grid-template-columns: 1fr 0.9fr 1.25fr 1.25fr;
+        gap: 7px;
+      }
+
+      .special-study-header {
+        padding: 7px 8px;
+        font-size: 9px;
+      }
+
+      .special-study-row {
+        padding: 7px 8px;
+        font-size: 10.5px;
+      }
+
+      .special-study-section {
+        padding: 8px;
+        font-size: 11px;
+      }
+
+      #quizSection.special-quiz-mode .word-row {
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      }
+
+      #quizSection.special-quiz-mode .word {
+        white-space: normal;
+        font-size: 11px;
+      }
+
+      #quizSection.special-quiz-mode .answer-input {
+        max-width: none;
+      }
     }
   </style>
 </head>
@@ -1214,6 +1363,8 @@ let chapters = {};
 let chapterOrder = [];
 let chapterDisplayNames = {};
 let chapterCategories = {};
+let chapterStudyLayouts = {};
+let chapterSpecialStudyRows = {};
 
 /* ------------------------------------------------
    VOCABULARY SOURCE
@@ -1234,6 +1385,8 @@ const VOCABULARY_SOURCE = "github";
 const DEFAULT_EXCEL_FILE = "estonian_vocabulary.xlsx";
 const VOCABULARY_SHEET = "Vocabulary";
 const ORDER_SHEET = "Chapter Order";
+const PRONOUNS_PROADVERBS_SHEET = "pronouns - proadverbs";
+const PRONOUNS_PROADVERBS_CHAPTER = "Pronouns - Proadverbs";
 
 
 /* ------------------------------------------------
@@ -1328,9 +1481,230 @@ function findColumn(headers, acceptedNames) {
   );
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function sanitizeRichCellHtml(html, fallbackText = "") {
+  if (!html) return escapeHtml(fallbackText).replace(/\n/g, "<br>");
+
+  const template = document.createElement("template");
+  template.innerHTML = html;
+
+  const allowedTags = new Set(["SPAN", "B", "STRONG", "I", "EM", "U", "BR"]);
+
+  const cleanNode = node => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return document.createTextNode(node.textContent || "");
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return document.createTextNode("");
+    }
+
+    const tag = allowedTags.has(node.tagName) ? node.tagName.toLowerCase() : "span";
+    const clean = document.createElement(tag);
+
+    if (node.tagName === "SPAN") {
+      const color = node.style && node.style.color;
+      const fontWeight = node.style && node.style.fontWeight;
+      const fontStyle = node.style && node.style.fontStyle;
+      const textDecoration = node.style && node.style.textDecoration;
+
+      if (color) clean.style.color = color;
+      if (fontWeight) clean.style.fontWeight = fontWeight;
+      if (fontStyle) clean.style.fontStyle = fontStyle;
+      if (textDecoration) clean.style.textDecoration = textDecoration;
+    }
+
+    Array.from(node.childNodes).forEach(child => clean.appendChild(cleanNode(child)));
+    return clean;
+  };
+
+  const wrapper = document.createElement("div");
+  Array.from(template.content.childNodes).forEach(node => wrapper.appendChild(cleanNode(node)));
+  return wrapper.innerHTML.replace(/\n/g, "<br>");
+}
+
+function getSheetCell(sheet, rowIndex, columnIndex) {
+  return sheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })];
+}
+
+function getCellPlainText(cell) {
+  if (!cell) return "";
+  if (cell.w !== undefined && cell.w !== null) return String(cell.w).trim();
+  if (cell.v !== undefined && cell.v !== null) return String(cell.v).trim();
+  return "";
+}
+
+function excelRichTextXmlToHtml(xml, fallbackText = "") {
+  if (!xml) return "";
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<root>${xml}</root>`, "application/xml");
+    if (doc.querySelector("parsererror")) return "";
+
+    const runs = Array.from(doc.querySelectorAll("r"));
+    if (!runs.length) return "";
+
+    return runs.map(run => {
+      const textNode = run.querySelector("t");
+      if (!textNode) return "";
+
+      const text = escapeHtml(textNode.textContent || "").replace(/\n/g, "<br>");
+      const colorNode = run.querySelector("rPr > color");
+      const bold = run.querySelector("rPr > b") !== null;
+      const italic = run.querySelector("rPr > i") !== null;
+      const underline = run.querySelector("rPr > u") !== null;
+
+      const styles = [];
+      if (colorNode) {
+        const rgb = colorNode.getAttribute("rgb");
+        const theme = colorNode.getAttribute("theme");
+        if (rgb && /^[0-9A-Fa-f]{8}$/.test(rgb)) {
+          styles.push(`color:#${rgb.slice(2)}`);
+        } else if (rgb && /^[0-9A-Fa-f]{6}$/.test(rgb)) {
+          styles.push(`color:#${rgb}`);
+        } else if (theme === "1") {
+          styles.push("color:#000000");
+        } else if (theme === "4") {
+          styles.push("color:#4472C4");
+        }
+      }
+      if (bold) styles.push("font-weight:700");
+      if (italic) styles.push("font-style:italic");
+      if (underline) styles.push("text-decoration:underline");
+
+      return styles.length
+        ? `<span style="${styles.join(";")}">${text}</span>`
+        : text;
+    }).join("");
+  } catch (error) {
+    return "";
+  }
+}
+
+function getCellDisplayHtml(cell) {
+  const plain = getCellPlainText(cell);
+
+  /* SheetJS may expose Excel rich text as HTML (.h) or raw rich XML (.r).
+     Prefer the raw runs when available because they preserve the exact
+     blue/green font colors used in the Pronouns - Proadverbs sheet. */
+  const richXmlHtml = excelRichTextXmlToHtml(cell && cell.r ? cell.r : "", plain);
+  if (richXmlHtml) return richXmlHtml;
+
+  return sanitizeRichCellHtml(cell && cell.h ? cell.h : "", plain);
+}
+
+function hasStrongTopBorder(cell) {
+  const style = cell && cell.s;
+  const border = style && typeof style === "object" ? style.border : null;
+  const topStyle = border && border.top ? String(border.top.style || "").toLowerCase() : "";
+  return ["medium", "thick", "double"].includes(topStyle);
+}
+
+const SPECIAL_GROUP_START_ROWS = new Set([3, 13, 24, 39, 42, 59, 66, 75, 81, 89, 92, 105]);
+
+function stripParentheticalNotes(value) {
+  return String(value || "")
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s*\/\s*$/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function formatSpecialEnglishMeaning(value) {
+  const text = String(value || "").trim();
+  const parts = text.split(/\n+/);
+  const main = escapeHtml(parts.shift() || "");
+  const notes = parts
+    .join(" ")
+    .match(/\([^)]*\)/g) || [];
+
+  return main + notes.map(note =>
+    `<span class="translation-note">${escapeHtml(note)}</span>`
+  ).join("");
+}
+
+function parsePronounsProadverbsSheet(sheet) {
+  if (!sheet || !sheet["!ref"]) {
+    return { quizWords: [], studyRows: [] };
+  }
+
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const quizWords = [];
+  const studyRows = [];
+
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const aCell = getSheetCell(sheet, r, 0);
+    const bCell = getSheetCell(sheet, r, 1);
+    const cCell = getSheetCell(sheet, r, 2);
+    const dCell = getSheetCell(sheet, r, 3);
+
+    const estonian = getCellPlainText(aCell);
+    const english = getCellPlainText(bCell);
+    const example = getCellPlainText(cCell);
+    const exampleTranslation = getCellPlainText(dCell);
+
+    if (!estonian && !english && !example && !exampleTranslation) continue;
+
+    const isSection = estonian && !english && (
+      estonian.toUpperCase().includes("PRONOUN") ||
+      estonian.toUpperCase().includes("PROADJECT") ||
+      estonian.toUpperCase().includes("PRONUMERAL") ||
+      estonian.toUpperCase().includes("PROADVERB")
+    );
+
+    if (isSection) {
+      studyRows.push({
+        type: "section",
+        sectionHtml: getCellDisplayHtml(aCell)
+      });
+      continue;
+    }
+
+    if (!estonian || !english) continue;
+
+    const excelRowNumber = r + 1;
+    const hasGroupSeparator =
+      hasStrongTopBorder(aCell) ||
+      hasStrongTopBorder(bCell) ||
+      hasStrongTopBorder(cCell) ||
+      hasStrongTopBorder(dCell) ||
+      SPECIAL_GROUP_START_ROWS.has(excelRowNumber);
+
+    const record = {
+      type: "word",
+      estonian,
+      english,
+      groupSeparator: hasGroupSeparator,
+      estonianHtml: getCellDisplayHtml(aCell),
+      englishHtml: formatSpecialEnglishMeaning(english),
+      exampleHtml: getCellDisplayHtml(cCell),
+      exampleTranslationHtml: getCellDisplayHtml(dCell)
+    };
+
+    studyRows.push(record);
+    quizWords.push({
+      estonian,
+      english: stripParentheticalNotes(english),
+      specialPronounsProadverbs: true
+    });
+  }
+
+  return { quizWords, studyRows };
+}
+
 function parseWorkbook(workbook) {
   const vocabularySheet = workbook.Sheets[VOCABULARY_SHEET];
   const orderSheet = workbook.Sheets[ORDER_SHEET];
+  const pronounsProadverbsSheet = workbook.Sheets[PRONOUNS_PROADVERBS_SHEET];
 
   if (!vocabularySheet) {
     throw new Error(
@@ -1493,6 +1867,8 @@ function parseWorkbook(workbook) {
   const newOrder = [];
   const newDisplayNames = {};
   const newCategories = {};
+  const newStudyLayouts = {};
+  const newSpecialStudyRows = {};
 
   validChapterRows.forEach((chapterInfo, index) => {
     const words = vocabularyByChapter[
@@ -1511,7 +1887,24 @@ function parseWorkbook(workbook) {
     newOrder.push(key);
     newDisplayNames[key] = chapterInfo.chapterName;
     newCategories[key] = chapterInfo.category;
+    newStudyLayouts[key] = "standard";
   });
+
+  /* The dedicated pronouns/proadverbs sheet is exposed as one gray Other chapter.
+     It uses columns A/B in quiz mode, and A:D (including Excel rich text) in study mode. */
+  if (pronounsProadverbsSheet) {
+    const special = parsePronounsProadverbsSheet(pronounsProadverbsSheet);
+
+    if (special.quizWords.length > 0) {
+      const specialKey = "chapter_pronouns_proadverbs";
+      newChapters[specialKey] = special.quizWords;
+      newOrder.push(specialKey);
+      newDisplayNames[specialKey] = PRONOUNS_PROADVERBS_CHAPTER;
+      newCategories[specialKey] = "Other";
+      newStudyLayouts[specialKey] = "pronouns-proadverbs";
+      newSpecialStudyRows[specialKey] = special.studyRows;
+    }
+  }
 
   if (newOrder.length === 0) {
     throw new Error(
@@ -1523,6 +1916,8 @@ function parseWorkbook(workbook) {
   chapterOrder = newOrder;
   chapterDisplayNames = newDisplayNames;
   chapterCategories = newCategories;
+  chapterStudyLayouts = newStudyLayouts;
+  chapterSpecialStudyRows = newSpecialStudyRows;
 
   renderChapterCards();
 }
@@ -1615,7 +2010,9 @@ async function loadVocabularyFromUrl(fileName) {
   const arrayBuffer = await response.arrayBuffer();
 
   const workbook = XLSX.read(arrayBuffer, {
-    type: "array"
+    type: "array",
+    cellStyles: true,
+    cellHTML: true
   });
 
   parseWorkbook(workbook);
@@ -1640,7 +2037,7 @@ function loadVocabularyFromDesktopFile(event) {
 
       const workbook = XLSX.read(
         data,
-        { type: "array" }
+        { type: "array", cellStyles: true, cellHTML: true }
       );
 
       parseWorkbook(workbook);
@@ -1673,6 +2070,8 @@ async function initializeVocabulary() {
     chapterOrder = [];
     chapterDisplayNames = {};
     chapterCategories = {};
+    chapterStudyLayouts = {};
+    chapterSpecialStudyRows = {};
 
     desktopTestOrder.forEach((chapterInfo, index) => {
       const chapterKey = "desktop_" + index;
@@ -1687,6 +2086,8 @@ async function initializeVocabulary() {
 
       chapterCategories[chapterKey] =
         chapterInfo.category || "Other";
+
+      chapterStudyLayouts[chapterKey] = "standard";
     });
 
     renderChapterCards();
@@ -1839,13 +2240,19 @@ function startTranslationGame() {
 function startQuiz(selectedCheckboxes) {
   remainingWords = [];
 
+  const hasSpecialChapter = selectedCheckboxes.some(checkbox =>
+    chapterStudyLayouts[checkbox.value] === "pronouns-proadverbs"
+  );
+  document.getElementById("quizSection").classList.toggle("special-quiz-mode", hasSpecialChapter);
+
   selectedCheckboxes.forEach(checkbox => {
 
     chapters[checkbox.value].forEach(word => {
 
       remainingWords.push({
         estonian: word.estonian,
-        english: word.english
+        english: word.english,
+        specialPronounsProadverbs: Boolean(word.specialPronounsProadverbs)
       });
 
     });
@@ -1890,6 +2297,9 @@ function showStudyVocabulary(chapterKey) {
   const title =
     document.getElementById("studyModalTitle");
 
+  const modal = document.querySelector(".study-modal");
+  const isSpecial = chapterStudyLayouts[chapterKey] === "pronouns-proadverbs";
+
   title.textContent =
     chapterDisplayNames[chapterKey] ||
     chapterKey;
@@ -1898,20 +2308,55 @@ function showStudyVocabulary(chapterKey) {
     `${chapters[chapterKey].length} ${chapters[chapterKey].length === 1 ? "word" : "words"}`;
 
   list.innerHTML = "";
+  list.classList.toggle("special-study-list", isSpecial);
+  modal.classList.toggle("special-study-modal", isSpecial);
 
-  chapters[chapterKey].forEach(word => {
-    const row =
-      document.createElement("div");
-
-    row.className = "study-row";
-
-    row.innerHTML = `
-      <div class="study-estonian">${word.estonian}</div>
-      <div class="study-english">${word.english}</div>
+  if (isSpecial) {
+    const header = document.createElement("div");
+    header.className = "special-study-header";
+    header.innerHTML = `
+      <div>Estonian</div>
+      <div>English</div>
+      <div>Estonian example</div>
+      <div>English translation</div>
     `;
+    list.appendChild(header);
 
-    list.appendChild(row);
-  });
+    (chapterSpecialStudyRows[chapterKey] || []).forEach(item => {
+      if (item.type === "section") {
+        const section = document.createElement("div");
+        section.className = "special-study-section";
+        section.innerHTML = item.sectionHtml;
+        list.appendChild(section);
+        return;
+      }
+
+      const row = document.createElement("div");
+      row.className = "special-study-row" + (item.groupSeparator ? " group-separator" : "");
+      row.innerHTML = `
+        <div class="special-study-word">${item.estonianHtml}</div>
+        <div class="special-study-translation">${item.englishHtml}</div>
+        <div class="special-study-example">${item.exampleHtml}</div>
+        <div class="special-study-example-translation">${item.exampleTranslationHtml}</div>
+      `;
+      list.appendChild(row);
+    });
+  } else {
+    chapters[chapterKey].forEach(word => {
+      const row =
+        document.createElement("div");
+
+      row.className = "study-row";
+
+      row.innerHTML = `
+        <div class="study-estonian">${escapeHtml(word.estonian)}</div>
+        <div class="study-english">${escapeHtml(word.english)}</div>
+      `;
+
+      list.appendChild(row);
+    });
+  }
+
   overlay.style.display = "block";
 
   requestAnimationFrame(() => {
@@ -1931,6 +2376,10 @@ function backToStart() {
   document
     .getElementById("quizSection")
     .style.display = "none";
+
+  document
+    .getElementById("quizSection")
+    .classList.remove("special-quiz-mode");
 
   document
     .getElementById("finishedSection")
@@ -2002,8 +2451,8 @@ function showNextWords() {
       <div class="word">
         ${index + 1}. ${
           selectedMode === "et-en"
-            ? word.estonian
-            : word.english
+            ? escapeHtml(word.estonian)
+            : escapeHtml(word.english)
         }
       </div>
 
@@ -2045,7 +2494,7 @@ function showNextWords() {
 
 function getAcceptedAnswers(answerText) {
   return String(answerText || "")
-    .split("/")
+    .split(/\s*(?:\/|—|–)\s*/g)
     .map(answer => answer.trim().toLowerCase())
     .filter(answer => answer !== "");
 }
@@ -2087,7 +2536,7 @@ function checkAnswers() {
 
       feedback.innerHTML = `
         <span class="feedback-pill">
-          ✓ ${shownCorrectAnswer}
+          ✓ ${escapeHtml(shownCorrectAnswer)}
         </span>
       `;
 
@@ -2105,7 +2554,7 @@ function checkAnswers() {
           class="feedback-pill"
           onclick="toggleCorrection(${index})"
         >
-          ✕ ${shownCorrectAnswer}
+          ✕ ${escapeHtml(shownCorrectAnswer)}
         </span>
       `;
 
@@ -2200,7 +2649,8 @@ function toggleCorrection(index) {
 
       remainingWords.push({
         estonian: word.estonian,
-        english: word.english
+        english: word.english,
+        specialPronounsProadverbs: Boolean(word.specialPronounsProadverbs)
       });
 
     }
