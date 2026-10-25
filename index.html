@@ -2494,7 +2494,12 @@ function fitSpecialStudyMobileText() {
   document.querySelectorAll(
     '.special-study-word .special-cell-line, .special-study-translation .special-cell-line'
   ).forEach(line => {
+    /* Measure the real one-line width first. Do not let the browser break the
+       word before the auto-fit logic has had a chance to shrink it. */
     line.style.fontSize = '';
+    line.style.whiteSpace = 'nowrap';
+    line.style.overflowWrap = 'normal';
+    line.style.wordBreak = 'normal';
 
     const available = line.clientWidth;
     if (!available) return;
@@ -2503,8 +2508,14 @@ function fitSpecialStudyMobileText() {
     const minimum = 7;
 
     while (line.scrollWidth > available + 1 && size > minimum) {
-      size -= 0.5;
+      size = Math.max(minimum, size - 0.5);
       line.style.fontSize = size + 'px';
+    }
+
+    /* Wrapping is only the last resort after reaching the minimum size. */
+    if (line.scrollWidth > available + 1) {
+      line.style.whiteSpace = 'normal';
+      line.style.overflowWrap = 'anywhere';
     }
   });
 }
