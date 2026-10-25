@@ -622,11 +622,13 @@
       border-top: 1px solid #edf1f6;
     }
 
-    .special-word-desktop {
+    .special-word-desktop,
+    .special-translation-desktop {
       display: inline;
     }
 
-    .special-word-mobile {
+    .special-word-mobile,
+    .special-translation-mobile {
       display: none;
     }
 
@@ -1186,11 +1188,13 @@
         font-size: 10.5px;
       }
 
-      .special-word-desktop {
+      .special-word-desktop,
+      .special-translation-desktop {
         display: none;
       }
 
-      .special-word-mobile {
+      .special-word-mobile,
+      .special-translation-mobile {
         display: block;
         white-space: normal;
       }
@@ -1746,6 +1750,33 @@ function formatSpecialEstonianDisplay(html, plainText) {
          `<span class="special-word-mobile">${mobile}</span>`;
 }
 
+function formatSpecialEnglishDisplay(value) {
+  const text = String(value || "").trim();
+  const desktop = formatSpecialEnglishMeaning(text);
+
+  const notes = text.match(/\([^)]*\)/g) || [];
+  const mainText = text
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  const mobileParts = mainText
+    .split(/\s*[—–]\s*/g)
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  const mobileForms = mobileParts
+    .map(part => `<span class="special-mobile-form-part">${escapeHtml(part)}</span>`)
+    .join("");
+
+  const mobileNotes = notes
+    .map(note => `<span class="translation-note">${escapeHtml(note)}</span>`)
+    .join("");
+
+  return `<span class="special-translation-desktop">${desktop}</span>` +
+         `<span class="special-translation-mobile">${mobileForms}${mobileNotes}</span>`;
+}
+
 function parsePronounsProadverbsSheet(sheet) {
   if (!sheet || !sheet["!ref"]) {
     return { quizWords: [], studyRows: [] };
@@ -1799,7 +1830,7 @@ function parsePronounsProadverbsSheet(sheet) {
       english,
       groupSeparator: hasGroupSeparator,
       estonianHtml: formatSpecialEstonianDisplay(getCellDisplayHtml(aCell), estonian),
-      englishHtml: formatSpecialEnglishMeaning(english),
+      englishHtml: formatSpecialEnglishDisplay(english),
       exampleHtml: formatSpecialExampleHtml(getCellDisplayHtml(cCell)),
       exampleTranslationHtml: formatSpecialExampleHtml(getCellDisplayHtml(dCell))
     };
