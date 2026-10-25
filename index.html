@@ -512,7 +512,7 @@
       display: grid;
       grid-template-columns: minmax(305px, 1.75fr) minmax(170px, 1fr) minmax(235px, 1.45fr) minmax(235px, 1.45fr);
       gap: 10px;
-      align-items: center;
+      align-items: start;
     }
 
     .special-study-header {
@@ -532,7 +532,6 @@
       border-bottom: 1px solid #edf1f6;
       font-size: 13px;
       line-height: 1.12;
-      align-items: stretch;
     }
 
     .special-study-row.group-separator {
@@ -552,9 +551,7 @@
       line-height: 1.08;
       letter-spacing: -0.01em;
       text-align: left;
-      display: flex;
-      align-items: center;
-      min-width: 0;
+      align-self: center;
     }
 
     .special-study-translation {
@@ -562,9 +559,7 @@
       white-space: pre-line;
       line-height: 1.08;
       text-align: left;
-      display: flex;
-      align-items: center;
-      min-width: 0;
+      align-self: center;
     }
 
     .special-study-translation .translation-note {
@@ -594,52 +589,11 @@
       border-top: 1px solid #edf1f6;
     }
 
-    .special-example-grid {
-      display: flex;
-      flex-direction: column;
-      grid-column: 3 / 5;
-      align-self: center;
-      min-width: 0;
-    }
-
-    .special-example-pair {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      column-gap: 10px;
-      align-items: stretch;
-      min-width: 0;
-    }
-
-    .special-example-cell {
-      padding: 2px 0;
-      min-width: 0;
-      display: flex;
-      align-items: center;
-    }
-
-    .special-example-pair + .special-example-pair {
-      margin-top: 3px;
-      padding-top: 4px;
-      border-top: 1px solid #edf1f6;
-    }
-
-    .special-mobile-form-part {
-      display: block;
-    }
-
-    .special-mobile-form-part + .special-mobile-form-part {
-      margin-top: 3px;
-      padding-top: 4px;
-      border-top: 1px solid #edf1f6;
-    }
-
-    .special-word-desktop,
-    .special-translation-desktop {
+    .special-word-desktop {
       display: inline;
     }
 
-    .special-word-mobile,
-    .special-translation-mobile {
+    .special-word-mobile {
       display: none;
     }
 
@@ -1199,20 +1153,13 @@
         font-size: 10.5px;
       }
 
-      .special-word-desktop,
-      .special-translation-desktop {
+      .special-word-desktop {
         display: none;
       }
 
-      .special-word-mobile,
-      .special-translation-mobile {
-        display: block;
-        white-space: normal;
-      }
-
-      .special-mobile-form-part + .special-mobile-form-part {
-        margin-top: 4px;
-        padding-top: 4px;
+      .special-word-mobile {
+        display: inline;
+        white-space: pre-line;
       }
 
       .special-example-line + .special-example-line {
@@ -1722,20 +1669,13 @@ function formatSpecialExampleHtml(html) {
   const text = String(html || "").trim();
   if (!text) return "";
 
-  let parts = text
+  const parts = text
     .split(/(?:<br\s*\/?\s*>|\r?\n)+/i)
     .map(part => part.trim())
     .filter(Boolean);
 
-  /* Some rich-text Excel cells lose their visible line break when converted to HTML.
-     If that happens, use sentence-ending periods as the fallback separator. */
   if (parts.length <= 1) {
-    const marked = text.replace(/\.(?=(?:<\/[^>]+>)*\s*(?:<[^/][^>]*>)?[A-ZÄÖÜÕ])/g, ".@@EXAMPLE_BREAK@@");
-    const periodParts = marked
-      .split("@@EXAMPLE_BREAK@@")
-      .map(part => part.trim())
-      .filter(Boolean);
-    if (periodParts.length > 1) parts = periodParts;
+    return `<span class="special-example-line">${text}</span>`;
   }
 
   return parts
@@ -1743,55 +1683,17 @@ function formatSpecialExampleHtml(html) {
     .join("");
 }
 
-function splitSpecialExampleHtml(html) {
-  const text = String(html || "").trim();
-  if (!text) return [];
-  return text
-    .split(/(?:<br\s*\/?\s*>|\r?\n)+/i)
-    .map(part => part.trim())
-    .filter(Boolean);
-}
-
-
 function formatSpecialEstonianDisplay(html, plainText) {
   const desktop = String(html || escapeHtml(plainText || ""));
-  const mobileParts = String(plainText || "")
-    .split(/\s*(?:[—–]|\r?\n)\s*/g)
+  const mobile = String(plainText || "")
+    .split(/\s*[—–]\s*/g)
     .map(part => part.trim())
-    .filter(Boolean);
-
-  const mobile = mobileParts
-    .map(part => `<span class="special-mobile-form-part">${escapeHtml(part)}</span>`)
-    .join("");
+    .filter(Boolean)
+    .map(escapeHtml)
+    .join("<br>");
 
   return `<span class="special-word-desktop">${desktop}</span>` +
          `<span class="special-word-mobile">${mobile}</span>`;
-}
-
-function formatSpecialEnglishDisplay(value) {
-  const text = String(value || "").trim();
-  const desktop = formatSpecialEnglishMeaning(text);
-
-  const notes = text.match(/\([^)]*\)/g) || [];
-  const mainText = text
-    .replace(/\s*\([^)]*\)/g, "")
-    .trim();
-
-  const mobileParts = mainText
-    .split(/\s*(?:[—–]|\r?\n)\s*/g)
-    .map(part => part.trim())
-    .filter(Boolean);
-
-  const mobileForms = mobileParts
-    .map(part => `<span class="special-mobile-form-part">${escapeHtml(part)}</span>`)
-    .join("");
-
-  const mobileNotes = notes
-    .map(note => `<span class="translation-note">${escapeHtml(note)}</span>`)
-    .join("");
-
-  return `<span class="special-translation-desktop">${desktop}</span>` +
-         `<span class="special-translation-mobile">${mobileForms}${mobileNotes}</span>`;
 }
 
 function parsePronounsProadverbsSheet(sheet) {
@@ -1847,7 +1749,7 @@ function parsePronounsProadverbsSheet(sheet) {
       english,
       groupSeparator: hasGroupSeparator,
       estonianHtml: formatSpecialEstonianDisplay(getCellDisplayHtml(aCell), estonian),
-      englishHtml: formatSpecialEnglishDisplay(english),
+      englishHtml: formatSpecialEnglishMeaning(english),
       exampleHtml: formatSpecialExampleHtml(getCellDisplayHtml(cCell)),
       exampleTranslationHtml: formatSpecialExampleHtml(getCellDisplayHtml(dCell))
     };
@@ -2495,7 +2397,6 @@ function showStudyVocabulary(chapterKey) {
 
       const row = document.createElement("div");
       row.className = "special-study-row" + (item.groupSeparator ? " group-separator" : "");
-
       row.innerHTML = `
         <div class="special-study-word">${item.estonianHtml}</div>
         <div class="special-study-translation">${item.englishHtml}</div>
