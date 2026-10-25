@@ -536,7 +536,8 @@
       line-height: 1.12;
     }
 
-    .special-study-row.group-separator {
+    /* Group separators: identical to the Pronouns - Proadverbs layout. */
+    .special-study-row.group-start {
       border-top: 2px solid #98a6b5;
       margin-top: 3px;
       padding-top: 11px;
@@ -1456,6 +1457,8 @@ const VOCABULARY_SHEET = "Vocabulary";
 const ORDER_SHEET = "Chapter Order";
 const PRONOUNS_PROADVERBS_SHEET = "pronouns - proadverbs";
 const PRONOUNS_PROADVERBS_CHAPTER = "Pronouns - Proadverbs";
+const CONJUNCTIONS_SHEET = "conjunctions";
+const CONJUNCTIONS_CHAPTER = "Conjunctions";
 
 
 /* ------------------------------------------------
@@ -1645,7 +1648,11 @@ function excelRichTextXmlToHtml(xml, fallbackText = "") {
           /* Theme 1 is black; positive tint is Excel's lighter gray variant. */
           styles.push(tint > 0.35 ? "color:#7F7F7F" : "color:#000000");
         } else if (theme === "4") {
-          styles.push("color:#4472C4");
+          /* Excel theme Accent 1: normalize to the light blue used in this workbook. */
+          styles.push("color:#5B9BD5");
+        } else if (theme === "9") {
+          /* Excel theme Accent 6: normalize to the orange used in this workbook. */
+          styles.push("color:#ED7D31");
         }
       }
       if (bold) styles.push("font-weight:700");
@@ -1693,7 +1700,11 @@ function excelRunStyle(run) {
     } else if (theme === "1") {
       styles.push(tint > 0.35 ? "color:#7F7F7F" : "color:#000000");
     } else if (theme === "4") {
-      styles.push("color:#4472C4");
+      /* Excel theme Accent 1: normalize to the light blue used in this workbook. */
+      styles.push("color:#5B9BD5");
+    } else if (theme === "9") {
+      /* Excel theme Accent 6: normalize to the orange used in this workbook. */
+      styles.push("color:#ED7D31");
     }
   }
 
@@ -1772,14 +1783,55 @@ function formatSpecialCellFromExcel(cell, smallParentheticalNotes = false) {
     .join("")}</span>`;
 }
 
-function hasStrongTopBorder(cell) {
+function hasStrongBorder(cell, side) {
   const style = cell && cell.s;
   const border = style && typeof style === "object" ? style.border : null;
-  const topStyle = border && border.top ? String(border.top.style || "").toLowerCase() : "";
-  return ["medium", "thick", "double"].includes(topStyle);
+  const sideBorder = border && border[side] ? border[side] : null;
+  const borderStyle = sideBorder ? String(sideBorder.style || "").toLowerCase() : "";
+  return ["medium", "thick", "double"].includes(borderStyle);
+}
+
+function hasStrongTopBorder(cell) {
+  return hasStrongBorder(cell, "top");
+}
+
+function hasStrongBottomBorder(cell) {
+  return hasStrongBorder(cell, "bottom");
+}
+
+function hasStrongLeftBorder(cell) {
+  return hasStrongBorder(cell, "left");
+}
+
+function hasStrongRightBorder(cell) {
+  return hasStrongBorder(cell, "right");
 }
 
 const SPECIAL_GROUP_START_ROWS = new Set([3, 13, 24, 39, 42, 59, 66, 75, 81, 89, 92, 105]);
+
+/* Excel group brackets for the Conjunctions sheet.
+   SheetJS preserves rich text but does not reliably expose cell border styles in-browser,
+   so these boundaries mirror the medium outside borders in the workbook. */
+const CONJUNCTION_GROUP_RANGES = [
+  [2, 4],
+  [5, 30],
+  [31, 39],
+  [40, 53],
+  [54, 61]
+];
+
+function getConjunctionGroupState(excelRowNumber) {
+  const range = CONJUNCTION_GROUP_RANGES.find(([start, end]) =>
+    excelRowNumber >= start && excelRowNumber <= end
+  );
+  if (!range) return { groupBox: false, groupStart: false, groupEnd: false };
+  return {
+    groupBox: false,
+    /* Match Pronouns - Proadverbs: separator only BEFORE later groups, not above the first group. */
+    groupStart: range[0] !== CONJUNCTION_GROUP_RANGES[0][0] && excelRowNumber === range[0],
+    groupEnd: false
+  };
+}
 
 function stripParentheticalNotes(value) {
   return String(value || "")
@@ -1873,18 +1925,30 @@ function parsePronounsProadverbsSheet(sheet) {
     if (!estonian || !english) continue;
 
     const excelRowNumber = r + 1;
-    const hasGroupSeparator =
+    const groupStart =
       hasStrongTopBorder(aCell) ||
       hasStrongTopBorder(bCell) ||
       hasStrongTopBorder(cCell) ||
       hasStrongTopBorder(dCell) ||
       SPECIAL_GROUP_START_ROWS.has(excelRowNumber);
 
+    const groupEnd =
+      hasStrongBottomBorder(aCell) ||
+      hasStrongBottomBorder(bCell) ||
+      hasStrongBottomBorder(cCell) ||
+      hasStrongBottomBorder(dCell);
+
+    const groupBox =
+      hasStrongLeftBorder(aCell) ||
+      hasStrongRightBorder(dCell);
+
     const record = {
       type: "word",
       estonian,
       english,
-      groupSeparator: hasGroupSeparator,
+      groupStart,
+      groupEnd,
+      groupBox,
       estonianHtml: formatSpecialCellFromExcel(aCell),
       englishHtml: formatSpecialCellFromExcel(bCell, true),
       exampleHtml: formatSpecialCellFromExcel(cCell),
@@ -1902,10 +1966,62 @@ function parsePronounsProadverbsSheet(sheet) {
   return { quizWords, studyRows };
 }
 
+function parseConjunctionsSheet(sheet) {
+  if (!sheet || !sheet["!ref"]) {
+    return { quizWords: [], studyRows: [] };
+  }
+
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const quizWords = [];
+  const studyRows = [];
+
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const aCell = getSheetCell(sheet, r, 0);
+    const bCell = getSheetCell(sheet, r, 1);
+    const cCell = getSheetCell(sheet, r, 2);
+    const dCell = getSheetCell(sheet, r, 3);
+
+    const estonian = getCellPlainText(aCell);
+    const english = getCellPlainText(bCell);
+    const example = getCellPlainText(cCell);
+    const exampleTranslation = getCellPlainText(dCell);
+
+    if (!estonian && !english && !example && !exampleTranslation) continue;
+    if (!estonian || !english) continue;
+
+    const excelRowNumber = r + 1;
+    const { groupStart, groupEnd, groupBox } =
+      getConjunctionGroupState(excelRowNumber);
+
+    const record = {
+      type: "word",
+      estonian,
+      english,
+      groupStart,
+      groupEnd,
+      groupBox,
+      estonianHtml: formatSpecialCellFromExcel(aCell),
+      englishHtml: formatSpecialCellFromExcel(bCell),
+      exampleHtml: formatSpecialCellFromExcel(cCell),
+      exampleTranslationHtml: formatSpecialCellFromExcel(dCell)
+    };
+
+    studyRows.push(record);
+    quizWords.push({
+      estonian,
+      english,
+      specialPronounsProadverbs: true
+    });
+  }
+
+  return { quizWords, studyRows };
+}
+
 function parseWorkbook(workbook) {
   const vocabularySheet = workbook.Sheets[VOCABULARY_SHEET];
   const orderSheet = workbook.Sheets[ORDER_SHEET];
   const pronounsProadverbsSheet = workbook.Sheets[PRONOUNS_PROADVERBS_SHEET];
+  const conjunctionsSheet = workbook.Sheets[CONJUNCTIONS_SHEET];
 
   if (!vocabularySheet) {
     throw new Error(
@@ -2101,6 +2217,23 @@ function parseWorkbook(workbook) {
       newChapters[specialKey] = special.quizWords;
       newOrder.push(specialKey);
       newDisplayNames[specialKey] = PRONOUNS_PROADVERBS_CHAPTER;
+      newCategories[specialKey] = "Other";
+      newStudyLayouts[specialKey] = "pronouns-proadverbs";
+      newSpecialStudyRows[specialKey] = special.studyRows;
+    }
+  }
+
+  /* The dedicated conjunctions sheet uses the same four-column study layout.
+     Excel top borders define group separators; Alt+Enter creates thin internal
+     separators, and rich-text colors/bold styling are preserved from the workbook. */
+  if (conjunctionsSheet) {
+    const special = parseConjunctionsSheet(conjunctionsSheet);
+
+    if (special.quizWords.length > 0) {
+      const specialKey = "chapter_conjunctions";
+      newChapters[specialKey] = special.quizWords;
+      newOrder.push(specialKey);
+      newDisplayNames[specialKey] = CONJUNCTIONS_CHAPTER;
       newCategories[specialKey] = "Other";
       newStudyLayouts[specialKey] = "pronouns-proadverbs";
       newSpecialStudyRows[specialKey] = special.studyRows;
@@ -2565,7 +2698,12 @@ function showStudyVocabulary(chapterKey) {
       }
 
       const row = document.createElement("div");
-      row.className = "special-study-row" + (item.groupSeparator ? " group-separator" : "");
+      const groupClasses = [
+        item.groupBox ? "group-box" : "",
+        item.groupStart ? "group-start" : "",
+        item.groupEnd ? "group-end" : ""
+      ].filter(Boolean).join(" ");
+      row.className = "special-study-row" + (groupClasses ? " " + groupClasses : "");
       row.innerHTML = `
         <div class="special-study-word">${item.estonianHtml}</div>
         <div class="special-study-translation">${item.englishHtml}</div>
