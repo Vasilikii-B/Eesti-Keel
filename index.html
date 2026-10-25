@@ -589,6 +589,39 @@
       border-top: 1px solid #edf1f6;
     }
 
+    .special-example-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 10px;
+      grid-column: 3 / 5;
+      align-items: stretch;
+    }
+
+    .special-example-pair {
+      display: contents;
+    }
+
+    .special-example-cell {
+      padding: 1px 0;
+      min-width: 0;
+    }
+
+    .special-example-pair + .special-example-pair .special-example-cell {
+      margin-top: 3px;
+      padding-top: 4px;
+      border-top: 1px solid #edf1f6;
+    }
+
+    .special-mobile-form-part {
+      display: block;
+    }
+
+    .special-mobile-form-part + .special-mobile-form-part {
+      margin-top: 3px;
+      padding-top: 4px;
+      border-top: 1px solid #edf1f6;
+    }
+
     .special-word-desktop {
       display: inline;
     }
@@ -1158,8 +1191,13 @@
       }
 
       .special-word-mobile {
-        display: inline;
-        white-space: pre-line;
+        display: block;
+        white-space: normal;
+      }
+
+      .special-mobile-form-part + .special-mobile-form-part {
+        margin-top: 4px;
+        padding-top: 4px;
       }
 
       .special-example-line + .special-example-line {
@@ -1683,14 +1721,26 @@ function formatSpecialExampleHtml(html) {
     .join("");
 }
 
+function splitSpecialExampleHtml(html) {
+  const text = String(html || "").trim();
+  if (!text) return [];
+  return text
+    .split(/(?:<br\s*\/?\s*>|\r?\n)+/i)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+
 function formatSpecialEstonianDisplay(html, plainText) {
   const desktop = String(html || escapeHtml(plainText || ""));
-  const mobile = String(plainText || "")
+  const mobileParts = String(plainText || "")
     .split(/\s*[—–]\s*/g)
     .map(part => part.trim())
-    .filter(Boolean)
-    .map(escapeHtml)
-    .join("<br>");
+    .filter(Boolean);
+
+  const mobile = mobileParts
+    .map(part => `<span class="special-mobile-form-part">${escapeHtml(part)}</span>`)
+    .join("");
 
   return `<span class="special-word-desktop">${desktop}</span>` +
          `<span class="special-word-mobile">${mobile}</span>`;
@@ -2397,11 +2447,22 @@ function showStudyVocabulary(chapterKey) {
 
       const row = document.createElement("div");
       row.className = "special-study-row" + (item.groupSeparator ? " group-separator" : "");
+      const estonianExampleParts = splitSpecialExampleHtml(item.exampleHtml);
+      const englishExampleParts = splitSpecialExampleHtml(item.exampleTranslationHtml);
+      const exampleCount = Math.max(estonianExampleParts.length, englishExampleParts.length, 1);
+      let examplePairsHtml = "";
+      for (let i = 0; i < exampleCount; i++) {
+        examplePairsHtml += `
+          <div class="special-example-pair">
+            <div class="special-example-cell special-study-example">${estonianExampleParts[i] || ""}</div>
+            <div class="special-example-cell special-study-example-translation">${englishExampleParts[i] || ""}</div>
+          </div>`;
+      }
+
       row.innerHTML = `
         <div class="special-study-word">${item.estonianHtml}</div>
         <div class="special-study-translation">${item.englishHtml}</div>
-        <div class="special-study-example">${item.exampleHtml}</div>
-        <div class="special-study-example-translation">${item.exampleTranslationHtml}</div>
+        <div class="special-example-grid">${examplePairsHtml}</div>
       `;
       list.appendChild(row);
     });
