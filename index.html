@@ -2505,7 +2505,7 @@ function fitSpecialStudyMobileText() {
     if (!available) return;
 
     let size = parseFloat(getComputedStyle(line).fontSize) || 10.5;
-    const minimum = 7;
+    const minimum = 8.5;
 
     while (line.scrollWidth > available + 1 && size > minimum) {
       size = Math.max(minimum, size - 0.5);
