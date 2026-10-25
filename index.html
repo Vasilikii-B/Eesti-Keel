@@ -608,6 +608,15 @@
       display: block;
       min-width: 0;
       padding: 1px 0;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+
+    .special-study-translation .translation-note {
+      display: inline;
+      font-size: 0.72em;
+      line-height: 1;
+      color: #657386;
     }
 
     .special-cell-line + .special-cell-line {
@@ -1670,7 +1679,6 @@ function excelRunStyle(run) {
   const bold = run.querySelector("rPr > b") !== null;
   const italic = run.querySelector("rPr > i") !== null;
   const underline = run.querySelector("rPr > u") !== null;
-  const sizeNode = run.querySelector("rPr > sz");
   const styles = [];
 
   if (colorNode) {
@@ -1689,10 +1697,6 @@ function excelRunStyle(run) {
     }
   }
 
-  if (sizeNode) {
-    const size = Number(sizeNode.getAttribute("val"));
-    if (Number.isFinite(size) && size > 0) styles.push(`font-size:${size}pt`);
-  }
   if (bold) styles.push("font-weight:700");
   if (italic) styles.push("font-style:italic");
   if (underline) styles.push("text-decoration:underline");
@@ -1745,7 +1749,21 @@ function getCellDisplayLines(cell) {
     .map(line => escapeHtml(line));
 }
 
-function formatSpecialCellFromExcel(cell) {
+function formatSpecialCellFromExcel(cell, smallParentheticalNotes = false) {
+  if (!cell) return "";
+
+  if (smallParentheticalNotes) {
+    const plainLines = String(getCellPlainText(cell) || "").split(/\r?\n/);
+    const rendered = plainLines.map(line => {
+      const html = escapeHtml(line).replace(
+        /(\([^)]*\))/g,
+        '<span class="translation-note">$1</span>'
+      );
+      return `<span class="special-cell-line">${html || "&nbsp;"}</span>`;
+    });
+    return `<span class="special-cell-lines">${rendered.join("")}</span>`;
+  }
+
   const lines = getCellDisplayLines(cell);
   if (!lines.length) return "";
 
@@ -1868,7 +1886,7 @@ function parsePronounsProadverbsSheet(sheet) {
       english,
       groupSeparator: hasGroupSeparator,
       estonianHtml: formatSpecialCellFromExcel(aCell),
-      englishHtml: formatSpecialCellFromExcel(bCell),
+      englishHtml: formatSpecialCellFromExcel(bCell, true),
       exampleHtml: formatSpecialCellFromExcel(cCell),
       exampleTranslationHtml: formatSpecialCellFromExcel(dCell)
     };
@@ -2470,6 +2488,27 @@ function startQuiz(selectedCheckboxes) {
   showNextWords();
 }
 
+function fitSpecialStudyMobileText() {
+  if (window.innerWidth > 700) return;
+
+  document.querySelectorAll(
+    '.special-study-word .special-cell-line, .special-study-translation .special-cell-line'
+  ).forEach(line => {
+    line.style.fontSize = '';
+
+    const available = line.clientWidth;
+    if (!available) return;
+
+    let size = parseFloat(getComputedStyle(line).fontSize) || 10.5;
+    const minimum = 8.5;
+
+    while (line.scrollWidth > available + 1 && size > minimum) {
+      size -= 0.5;
+      line.style.fontSize = size + 'px';
+    }
+  });
+}
+
 function showStudyVocabulary(chapterKey) {
   const overlay =
     document.getElementById("studyOverlay");
@@ -2544,6 +2583,7 @@ function showStudyVocabulary(chapterKey) {
 
   requestAnimationFrame(() => {
     list.scrollTop = 0;
+    if (isSpecial) fitSpecialStudyMobileText();
   });
 }
 
@@ -3038,7 +3078,10 @@ document.addEventListener("keydown", function(event) {
 });
 
 window.addEventListener("resize", () => {
-  requestAnimationFrame(fitChapterTitles);
+  requestAnimationFrame(() => {
+    fitChapterTitles();
+    fitSpecialStudyMobileText();
+  });
 });
 
 window.addEventListener("resize", fitChapterTitles);
