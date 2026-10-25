@@ -505,14 +505,16 @@
 
     .study-list.special-study-list {
       background: #ffffff;
+      border-color: #aeb8c4;
+      overflow-x: hidden;
     }
 
     .special-study-header,
     .special-study-row {
       display: grid;
-      grid-template-columns: minmax(305px, 1.75fr) minmax(170px, 1fr) minmax(235px, 1.45fr) minmax(235px, 1.45fr);
-      gap: 10px;
-      align-items: start;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr) minmax(0, 1.15fr) minmax(0, 1.15fr);
+      gap: 8px;
+      align-items: center;
     }
 
     .special-study-header {
@@ -521,7 +523,7 @@
       z-index: 3;
       padding: 9px 14px;
       background: #eef3f8;
-      border-bottom: 1px solid #dfe7f0;
+      border-bottom: 1px solid #b8c2cd;
       font-size: 12px;
       font-weight: bold;
       color: #526174;
@@ -529,19 +531,24 @@
 
     .special-study-row {
       padding: 6px 12px;
-      border-bottom: 1px solid #edf1f6;
+      border-bottom: 1px solid #bfc8d2;
       font-size: 13px;
       line-height: 1.12;
     }
 
     .special-study-row.group-separator {
-      border-top: 2px solid #cfd8e3;
+      border-top: 2px solid #98a6b5;
       margin-top: 3px;
       padding-top: 11px;
     }
 
     .special-study-row:last-child {
       border-bottom: none;
+    }
+
+    .special-study-row > *,
+    .special-study-header > * {
+      min-width: 0;
     }
 
     .special-study-word {
@@ -586,7 +593,7 @@
     .special-example-line + .special-example-line {
       margin-top: 3px;
       padding-top: 4px;
-      border-top: 1px solid #edf1f6;
+      border-top: 1px solid #e4e9ef;
     }
 
     /* Excel Alt+Enter lines: preserve them as independent blocks in every special-study cell. */
@@ -606,7 +613,7 @@
     .special-cell-line + .special-cell-line {
       margin-top: 3px;
       padding-top: 4px;
-      border-top: 1px solid #edf1f6;
+      border-top: 1px solid #e4e9ef;
     }
 
     .special-word-desktop {
@@ -1159,8 +1166,8 @@
 
       .special-study-header,
       .special-study-row {
-        grid-template-columns: 1fr 0.9fr 1.25fr 1.25fr;
-        gap: 7px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 1.25fr);
+        gap: 6px;
       }
 
       .special-study-header {
@@ -1663,6 +1670,7 @@ function excelRunStyle(run) {
   const bold = run.querySelector("rPr > b") !== null;
   const italic = run.querySelector("rPr > i") !== null;
   const underline = run.querySelector("rPr > u") !== null;
+  const sizeNode = run.querySelector("rPr > sz");
   const styles = [];
 
   if (colorNode) {
@@ -1681,6 +1689,10 @@ function excelRunStyle(run) {
     }
   }
 
+  if (sizeNode) {
+    const size = Number(sizeNode.getAttribute("val"));
+    if (Number.isFinite(size) && size > 0) styles.push(`font-size:${size}pt`);
+  }
   if (bold) styles.push("font-weight:700");
   if (italic) styles.push("font-style:italic");
   if (underline) styles.push("text-decoration:underline");
